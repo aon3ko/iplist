@@ -3,7 +3,7 @@ execpath=/etc/iplist
 
 WGETCLI="wget -O -"
 CURLCLI="curl"
-PREFER=
+PREFER=WGETCLI
 
 SubFolder=CC
 
@@ -38,10 +38,10 @@ splitcountry() {
 }
 
 if [ ! -d $execpath/inet/$SubFolder ]; then
-	mkdir $execpath/inet/$SubFolder
+	mkdir -p $execpath/inet/$SubFolder
 fi
 if [ ! -d $execpath/inet6/$SubFolder ]; then
-	mkdir $execpath/inet6/$SubFolder
+	mkdir -p $execpath/inet6/$SubFolder
 fi
 
 for NIC in $DLLIST; do
