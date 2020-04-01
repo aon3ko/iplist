@@ -1,38 +1,60 @@
 #!/bin/bash
 execpath=/etc/iplist
-execconf=autoadd.conf
+conf=autoadd.conf
 
-if [ ! -z $1 ]; then
-	echo "usage: autoadd-ipset.sh [config file location]\
-	default location at /etc/iplist/autoadd.conf\
-	not implement yet :)"
+if [ -z "$(command -v ipset)" ]; then
+	echo "ipset not installed or not in \$PATH."
+	exit
 fi
 
-while IFS=' ' read setfile setname type; do
-	if test -f $execpath/inet/$setfile; then
-		echo "adding $setname IPv4 part."
-		if [ ! -z "$type" ]; then
-			ipset create $setname-4 hash:$type family inet
-		else
-			ipset create $setname-4 hash:net family inet
-		fi
-		ipset flush $setname-4
-		while read iprange; do
-			ipset add $setname-4 $iprange
-		done < $execpath/inet/$setfile
-		echo "adding $setname IPv4 done."
+while [ -n "$1" ]; do
+	case $1 in
+		*)
+		echo "\
+usage:  iplist-addipset.sh [config file location]
+	default location at /etc/iplist/autoadd.conf
+	*** this func not implemented ***"
+		exit
+		;;
+	esac
+done
+
+CheckFlush() {
+	ari=0
+	for setName in $flushedSets; do
+		[ $setName == $1 ] && ari=1
+	done
+	if [ $ari != "1" ]; then
+		ipset flush $1
+		flushedSets="$flushedSets $1"
 	fi
-	if test -f $execpath/inet6/$setfile; then
-		echo "adding $setname IPv6 part."
-		if [ ! -z "$type" ]; then
-			ipset create $setname-6 hash:$type family inet6
+}
+
+while IFS=' ' read iplistFile iplistName Type; do
+	if [ -f $execpath/inet/$iplistFile ]; then
+		echo -n "adding $iplistName IPv4 part..."
+		if [ -n "$Type" ]; then
+			ipset -! create $iplistName-4 hash:$Type family inet
 		else
-			ipset create $setname-6 hash:net family inet6
+			ipset -! create $iplistName-4 hash:net family inet
 		fi
-		ipset flush $setname-6
+		CheckFlush $iplistName-4
 		while read iprange; do
-			ipset add $setname-6 $iprange
-		done < $execpath/inet6/$setfile
-		echo "adding $setname IPv6 done."
+			ipset add $iplistName-4 $iprange
+		done < $execpath/inet/$iplistFile
+		echo "done."
 	fi
-done < $execpath/$execconf
+	if [ -f $execpath/inet6/$iplistFile ]; then
+		echo -n "adding $iplistName IPv6 part..."
+		if [ -n "$Type" ]; then
+			ipset -! create $iplistName-6 hash:$Type family inet6
+		else
+			ipset -! create $iplistName-6 hash:net family inet6
+		fi
+		CheckFlush $iplistName-6
+		while read iprange; do
+			ipset add $iplistName-6 $iprange
+		done < $execpath/inet6/$iplistFile
+		echo "done."
+	fi
+done < $execpath/$conf
