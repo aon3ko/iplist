@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 execpath=/etc/iplist
 conf=autoadd.conf
 
