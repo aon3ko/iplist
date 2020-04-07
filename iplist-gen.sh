@@ -1,5 +1,6 @@
 #!/bin/bash
 execpath=/etc/iplist
+conf=genlist.conf
 
 WGETCLI="wget -O -"
 CURLCLI="curl"
@@ -14,11 +15,34 @@ AFRINIC=https://ftp.afrinic.net/stats/afrinic/delegated-afrinic-latest
 LACNIC=https://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
 
 DLLIST="ARIN APNIC RIPENCC AFRINIC LACNIC"
+ProtoLIST="inet inet6"
+Mode="Minus"
+CCLIST=""
+
+CheckCC() {
+	_tmp=$(cut -b 1,2 <<< $1)
+	for CC in $CCLIST; do
+		case $Mode in
+			Plus)
+				[ $_tmp == $CC ] && return 0
+				;;
+			Minus)
+				[ $_tmp == $CC ] && return 1
+				;;
+		esac
+	done
+	if [ $Mode == "Minus" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
 
 # Format: Organization | CountryCode | Type | Address | Mask | Date | Stat
-splitcountry() {
+SplitCountry() {
 	while IFS='|' read Organization CountryCode Type Address Mask Date Stat; do
 		if [[ $CountryCode =~ ^[A-Z]{2,2}$ ]]; then
+		if CheckCC $CountryCode; then
 			case $Type in
 				ipv4)
 					declare -i CoverBit=0 Mask TrueMask
@@ -28,22 +52,25 @@ splitcountry() {
 					done
 					TrueMask=32-$CoverBit
 					echo $Address/$TrueMask >> $execpath/inet/$SubFolder/$CountryCode.txt
-				;;
+					;;
 				ipv6)
 					echo $Address/$Mask >> $execpath/inet6/$SubFolder/$CountryCode.txt
-				;;
+					;;
 			esac
+		fi
 		fi
 	done
 }
 
-if [ ! -d $execpath/inet/$SubFolder ]; then
-	mkdir -p $execpath/inet/$SubFolder
-fi
-if [ ! -d $execpath/inet6/$SubFolder ]; then
-	mkdir -p $execpath/inet6/$SubFolder
-fi
+for Protocol in $ProtoLIST; do
+	[ ! -d $execpath/$Protocol/$SubFolder ] && mkdir -p $execpath/$Protocol/$SubFolder && continue
+	while read FileName; do
+		if CheckCC $FileName; then
+			rm -f $execpath/$Protocol/$SubFolder/$FileName
+		fi
+	done <<< $(ls $execpath/$Protocol/$SubFolder)
+done
 
 for NIC in $DLLIST; do
-	wget -O - ${!NIC} | splitcountry
+	wget -O - ${!NIC} | SplitCountry
 done
