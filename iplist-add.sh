@@ -48,11 +48,9 @@ while read iplistFile iplistName iplistType; do
 
 	echo -n "adding $iplistFile ..."
 	while read; do
-		[ -n "$REPLY" ] && ipset -! add $iplistName-$IPvX $REPLY 2> /dev/null || continue
-		if [ "$?" != "0" ]; then
-			grep : <<< $REPLY && IPvX=6 || IPvX=4
-			ipset -! add $iplistName-$IPvX $REPLY 2> /dev/null || echo "$REPLY cannot be add"
-		fi
+		[ -z "$REPLY" ] || ipset -! add $iplistName-$IPvX $REPLY 2> /dev/null && continue
+		grep : <<< $REPLY > /dev/null && IPvX=6 || IPvX=4
+		ipset -! add $iplistName-$IPvX $REPLY 2> /dev/null || echo "$REPLY cannot be add"
 	done < $execpath/db/$iplistFile
 	echo " done."
 done < $execpath/$conffile
