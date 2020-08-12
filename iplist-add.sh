@@ -32,31 +32,27 @@ checkFlush() {
 		[ "$setName" == "$1" ] && ari=1 && break
 	done
 	if [ "$ari" != "1" ]; then
-		ipset flush $1
+		ipset flush $1-4
+		ipset flush $1-6
 		flushedSets="$flushedSets $1"
 	fi
 }
 
-while read iplistFile iplistName Type; do
+while read iplistFile iplistName iplistType; do
 	[ -z "$iplistFile" ] && continue
-	[ -z "$Type" ] && Type="net"
+	[ -z "$iplistType" ] && iplistType="net"
+	ipset -! create $iplistName-4 hash:$iplistType family inet
+	ipset -! create $iplistName-6 hash:$iplistType family inet6
+	checkFlush $iplistName
+	IPvX=4
 
-	if [ -f $execpath/inet/$iplistFile ]; then
-		echo -n "adding $iplistFile IPv4 part to $iplistName-4..."
-		ipset -! create $iplistName-4 hash:$Type family inet
-		checkFlush $iplistName-4
-		while read iprange; do
-			[ -n "$iprange" ] && ipset add $iplistName-4 $iprange
-		done < $execpath/inet/$iplistFile
-		echo "done."
-	fi
-	if [ -f $execpath/inet6/$iplistFile ]; then
-		echo -n "adding $iplistFile IPv6 part to $iplistName-6..."
-		ipset -! create $iplistName-6 hash:$Type family inet6
-		checkFlush $iplistName-6
-		while read iprange; do
-			[ -n "$iprange" ] && ipset add $iplistName-6 $iprange
-		done < $execpath/inet6/$iplistFile
-		echo "done."
-	fi
+	echo -n "adding $iplistFile ..."
+	while read; do
+		[ -n "$REPLY" ] && ipset -! add $iplistName-$IPvX $REPLY 2> /dev/null || continue
+		if [ "$?" != "0" ]; then
+			grep : <<< $REPLY && IPvX=6 || IPvX=4
+			ipset -! add $iplistName-$IPvX $REPLY 2> /dev/null || echo "$REPLY cannot be add"
+		fi
+	done < $execpath/db/$iplistFile
+	echo " done."
 done < $execpath/$conffile
