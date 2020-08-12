@@ -1,6 +1,7 @@
 #!/bin/bash
+
 execpath=/etc/iplist
-conf=genlist.conf
+conffile=genlist.conf
 
 WGETCLI="wget -O -"
 CURLCLI="curl"
@@ -19,7 +20,7 @@ ProtoLIST="inet inet6"
 Mode="Minus"
 CCLIST=""
 
-CheckCC() {
+checkCC() {
 	_tmp=$(cut -b 1,2 <<< $1)
 	for CC in $CCLIST; do
 		case $Mode in
@@ -39,7 +40,7 @@ CheckCC() {
 }
 
 # Format: Organization | CountryCode | Type | Address | Mask | Date | Stat
-SplitCountry() {
+splitCountry() {
 	while IFS='|' read Organization CountryCode Type Address Mask Date Stat; do
 		if [[ $CountryCode =~ ^[A-Z]{2,2}$ ]]; then
 		if CheckCC $CountryCode; then
@@ -51,10 +52,10 @@ SplitCountry() {
 						Mask=$Mask/2
 					done
 					TrueMask=32-$CoverBit
-					echo $Address/$TrueMask >> $execpath/inet/$SubFolder/$CountryCode.txt
+					echo $Address/$TrueMask >> $execpath/db/$SubFolder/$CountryCode.txt
 					;;
 				ipv6)
-					echo $Address/$Mask >> $execpath/inet6/$SubFolder/$CountryCode.txt
+					echo $Address/$Mask >> $execpath/db/$SubFolder/$CountryCode.txt
 					;;
 			esac
 		fi
@@ -65,12 +66,12 @@ SplitCountry() {
 for Protocol in $ProtoLIST; do
 	[ ! -d $execpath/$Protocol/$SubFolder ] && mkdir -p $execpath/$Protocol/$SubFolder && continue
 	while read FileName; do
-		if CheckCC $FileName; then
+		if checkCC $FileName; then
 			rm -f $execpath/$Protocol/$SubFolder/$FileName
 		fi
 	done <<< $(ls $execpath/$Protocol/$SubFolder)
 done
 
 for NIC in $DLLIST; do
-	wget -O - ${!NIC} | SplitCountry
+	wget -O - ${!NIC} | splitCountry
 done
