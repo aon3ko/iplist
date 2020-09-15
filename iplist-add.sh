@@ -13,11 +13,13 @@ while [ -n "$1" ]; do
 			shift
 			execpath="$(dirname $1)"
 			conffile="$(basename $1)"
+                        shift
 			;;
 		*)
 			echo "\
-usage:  iplist-addipset.sh [config file location]
-	default location at /etc/iplist/autoadd.conf"
+usage:   iplist-addipset.sh [options]
+options: -c [config file location]
+	 default location at /etc/iplist/autoadd.conf"
 			exit
 			;;
 	esac
@@ -26,7 +28,7 @@ done
 
 [ ! -f $execpath/$conffile ] && echo "$execpath/$conffile does not exist." && exit
 
-checkFlush() {
+function checkFlush() {
 	local ari=0
 	for setName in $flushedSets; do
 		[ "$setName" == "$1" ] && ari=1 && break
