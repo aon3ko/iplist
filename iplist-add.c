@@ -11,11 +11,6 @@
 char workpath[LENGTH_OF_PATH] = "/etc/iplist";
 char conffile[LENGTH_OF_NAME] = "autoadd.conf";
 
-void printargs(int argc, char *argv[]) {
-	for (int i = 0; i < argc; i++)
-		puts(argv[i]);
-}
-
 int main(int argc, char *argv[]) {
 	ipset_load_types();
 	struct ipset *ipsetInterface = ipset_init();
@@ -32,19 +27,19 @@ options: -c [config file location]\n\
 		}
 	}
 
-	char *confFileLocation = malloc(LENGTH_OF_LOCATION);
+	char	*confFileLocation = malloc(LENGTH_OF_LOCATION);
 	sprintf(confFileLocation, "%s/%s", workpath, conffile);
 	FILE	*autoadd = fopen(confFileLocation, "r"),
-			*iplistDb = fopen(confFileLocation, "r");
+		*iplistDb = fopen(confFileLocation, "r");
 	char	*iplistFile = malloc(LENGTH_OF_NAME),
-			*iplistName = malloc(LENGTH_OF_NAME),
-			*iplistType = malloc(LENGTH_OF_TYPE),
-			*iplistDbLocation = malloc(LENGTH_OF_LOCATION),
-			*unProcessedString = malloc(LENGTH_OF_NAME),
-			*ipsetCommandBuf = malloc(LENGTH_OF_LOCATION),
-			mode;
-	int		counter;
-	
+		*iplistName = malloc(LENGTH_OF_NAME),
+		*iplistType = malloc(LENGTH_OF_TYPE),
+		*iplistDbLocation = malloc(LENGTH_OF_LOCATION),
+		*unProcessedString = malloc(LENGTH_OF_NAME),
+		*ipsetCommandBuf = malloc(LENGTH_OF_LOCATION),
+		mode;
+	int	counter;
+
 	char *flushedSets[LENGTH_OF_LOCATION];
 	for (int pos = 0; pos < LENGTH_OF_LOCATION; pos++)
 		flushedSets[pos] = calloc(LENGTH_OF_NAME, sizeof(char));
@@ -68,18 +63,14 @@ options: -c [config file location]\n\
 				sprintf(ipsetArgs[4], "hash:%s", iplistType);
 				strcpy(ipsetArgs[5], "family");
 				strcpy(ipsetArgs[6], "inet");
-				// printargs(7, ipsetArgs);
 				ipset_parse_argv(ipsetInterface, 7, ipsetArgs);
 				sprintf(ipsetArgs[3], "%s-6", iplistName);
 				strcpy(ipsetArgs[6], "inet6");
-				// printargs(7, ipsetArgs);
 				ipset_parse_argv(ipsetInterface, 7, ipsetArgs);
 				strcpy(ipsetArgs[2], "flush");
 				sprintf(ipsetArgs[3], "%s-4", iplistName);
-				// printargs(4, ipsetArgs);
 				ipset_parse_argv(ipsetInterface, 4, ipsetArgs);
 				sprintf(ipsetArgs[3], "%s-6", iplistName);
-				// printargs(4, ipsetArgs);
 				ipset_parse_argv(ipsetInterface, 4, ipsetArgs);
 				break;
 			}
@@ -112,7 +103,7 @@ options: -c [config file location]\n\
 				ipset_parse_line(ipsetInterface, ipsetCommandBuf); counter++;
 				break;
 			default:
-				if (!strcmp(unProcessedString, ""))
+				if (strcmp(unProcessedString, ""))
 					printf("%s cannot be add", unProcessedString);
 			}
 			memset(unProcessedString, 0, LENGTH_OF_NAME);
