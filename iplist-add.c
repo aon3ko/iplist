@@ -100,7 +100,7 @@ int iplist_append(union iplist **dst, FILE *iplistDb, const char *iplistName, co
 #ifdef SELECT_NFT
 #endif
 	}
-	char *str4 = NULL, *str6 = NULL;
+
 	while (fgets(readBuf, 64, iplistDb) != NULL) {
 #ifdef SELECT_IPSET
 		if (strchr(readBuf, '.') != NULL)
