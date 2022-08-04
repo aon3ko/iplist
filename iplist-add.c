@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-//#include <arguments.h>
+#include <libneko/realstring.c>
 
 #define SELECT_NFT
 #ifdef SELECT_IPSET
@@ -62,6 +62,13 @@ int iplist_append(union iplist **dst, FILE *iplistDb, const char *iplistName, co
 	char commandBuf[256], readBuf[64], flag = 0;
 	int counter = 0;
 	union iplist *currentLocation = NULL;
+#ifdef SELECT_NFT
+	struct string nftcommand4 = string_init(), nftcommand6 = string_init();
+	sprintf(commandBuf, "add element ip %s %s { ", p, iplistName);
+	string_append(&nftcommand4, commandBuf);
+	sprintf(commandBuf, "add element ip6 %s %s { ", p, iplistName);
+	string_append(&nftcommand6, commandBuf);
+#endif
 
 	for (int pos = 1; pos < (*dst)->size; pos++)
 		if (strcmp((*dst)->name, iplistName) == 0) {
@@ -93,6 +100,7 @@ int iplist_append(union iplist **dst, FILE *iplistDb, const char *iplistName, co
 #ifdef SELECT_NFT
 #endif
 	}
+	char *str4 = NULL, *str6 = NULL;
 	while (fgets(readBuf, 64, iplistDb) != NULL) {
 #ifdef SELECT_IPSET
 		if (strchr(readBuf, '.') != NULL)
@@ -102,13 +110,25 @@ int iplist_append(union iplist **dst, FILE *iplistDb, const char *iplistName, co
 		ipset_parse_line((*dst)->operationInterface, commandBuf); counter++;
 #endif
 #ifdef SELECT_NFT
-		if (strchr(readBuf, '.') != NULL)
-			sprintf(commandBuf, "add element ip %s %s { %s }", p, iplistName, readBuf);
-		if (strchr(readBuf, ':') != NULL)
-			sprintf(commandBuf, "add element ip6 %s %s { %s }", p, iplistName, readBuf);
-		nft_run_cmd_from_buffer((*dst)->operationInterface, commandBuf); counter++;
+		if (strchr(readBuf, '.') != NULL) {
+			sprintf(commandBuf, " %s,", readBuf);
+			string_append(&nftcommand4, commandBuf);
+			counter++;
+		}
+		if (strchr(readBuf, ':') != NULL) {
+			sprintf(commandBuf, " %s,", readBuf);
+			string_append(&nftcommand6, commandBuf);
+			counter++;
+		}
 #endif
 	}
+#ifdef SELECT_NFT
+	sprintf(commandBuf, " }", readBuf);
+	string_append(&nftcommand4, commandBuf); string_append(&nftcommand6, commandBuf);
+	nft_run_cmd_from_buffer((*dst)->operationInterface, nftcommand4.str);
+	nft_run_cmd_from_buffer((*dst)->operationInterface, nftcommand6.str);
+	string_delete(&nftcommand4); string_delete(&nftcommand6);
+#endif
 
 	fclose(iplistDb);
 	printf(" done with %d record(s).\n", counter);

@@ -1,0 +1,3 @@
+[submodule "libneko"]
+	path = libneko
+	url = https://github.com/EXSERENS/libneko
