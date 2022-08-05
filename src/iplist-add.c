@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <libneko/realstring.c>
 
 #define SELECT_NFT
 #ifdef SELECT_IPSET
@@ -10,11 +9,13 @@
 #endif
 #ifdef SELECT_NFT
 	#include <nftables/libnftables.h>
+	#include <libneko/realstring.c>
 	#define SELECTED
 #endif
 #ifndef SELECTED
 	#include <libipset/ipset.h>
 	#include <nftables/libnftables.h>
+	#include <libneko/realstring.c>
 #endif
 
 char workpath[128] = "/etc/iplist";
@@ -64,7 +65,7 @@ int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName)
 	struct iplist_internal *objptr = NULL;
 
 	// Check for existing
-	for (int pos = 1; pos < iplist->size; pos++)
+	for (int pos = 0; pos < iplist->size; pos++)
 		if (strcmp((iplist->objptr + pos)->name, iplistName) == 0) {
 			objptr = iplist->objptr + pos;
 			break;
