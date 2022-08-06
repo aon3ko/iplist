@@ -44,6 +44,14 @@ struct iplist *iplist_init() {
 	struct iplist *iplist = calloc(1, sizeof(struct iplist));
 	iplist->size = 0;
 	iplist->objptr = calloc(0, sizeof(struct iplist_internal));
+#ifdef SELECT_IPSET
+	ipset_load_types();
+	iplist->opIf = ipset_init();
+#endif
+#ifdef SELECT_NFT
+	iplist->opIf = nft_ctx_new(NFT_CTX_DEFAULT);
+	strcpy(iplist->nftTableName, "neko");
+#endif
 	return iplist;
 }
 
@@ -61,7 +69,7 @@ void iplist_finish(struct iplist *iplist) {
 
 int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName) {
 	char commandBuf[256], readBuf[64], flag = 0;
-	int counter = 0;
+	unsigned int counter = 0;
 	struct iplist_internal *objptr = NULL;
 
 	// Check for existing
@@ -137,20 +145,22 @@ int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName)
 #endif
 	}
 #ifdef SELECT_NFT
-	sprintf(commandBuf, " }", readBuf);
-	string_append(&nftcommand4, commandBuf); string_append(&nftcommand6, commandBuf);
-	nft_run_cmd_from_buffer(iplist->opIf, nftcommand4.str);
-	nft_run_cmd_from_buffer(iplist->opIf, nftcommand6.str);
+	if (counter > 0) {
+		sprintf(commandBuf, " }");
+		string_append(&nftcommand4, commandBuf); string_append(&nftcommand6, commandBuf);
+		nft_run_cmd_from_buffer(iplist->opIf, nftcommand4.str);
+		nft_run_cmd_from_buffer(iplist->opIf, nftcommand6.str);
+	}
 	string_delete(&nftcommand4); string_delete(&nftcommand6);
 #endif
 
 	fclose(iplistDb);
-	printf(" done with %d record(s).\n", counter);
+	printf(" done with %u record(s).\n", counter);
 	return 0;
 }
 
 int main(int argc, char *argv[]) {
-	struct iplist *iplist = iplist_init();;
+	struct iplist *iplist = iplist_init();
 
 	for (int pos = 1; pos < argc; pos++)
         	if (argv[pos][0] == '-') switch (argv[pos][1]) {
@@ -189,15 +199,6 @@ Compiled with nft support\n");
 #endif
 			return EXIT_SUCCESS;
 		}
-
-#ifdef SELECT_IPSET
-	ipset_load_types();
-	iplist->opIf = ipset_init();
-#endif
-#ifdef SELECT_NFT
-	iplist->opIf = nft_ctx_new(NFT_CTX_DEFAULT);
-	strcpy(iplist->nftTableName, "neko");
-#endif
 
 	char	iplistFile[64],
 		iplistName[64],
