@@ -70,9 +70,7 @@ void iplist_finish(struct iplist *iplist) {
 int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName) {
 	char commandBuf[256], readBuf[64], flag = 0;
 	struct iplist_internal *objptr = NULL;
-#ifdef SELECT_IPSET
 	unsigned int counter = 0;
-#endif
 #ifdef SELECT_NFT
 	unsigned int counter4 = 0, counter6 = 0;
 #endif
@@ -158,6 +156,7 @@ int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName)
 #endif
 
 	fclose(iplistDb);
+	counter = counter4 + counter6;
 	printf(" done with %u record(s).\n", counter);
 	return 0;
 }
