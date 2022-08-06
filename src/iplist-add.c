@@ -69,8 +69,13 @@ void iplist_finish(struct iplist *iplist) {
 
 int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName) {
 	char commandBuf[256], readBuf[64], flag = 0;
-	unsigned int counter = 0;
 	struct iplist_internal *objptr = NULL;
+#ifdef SELECT_IPSET
+	unsigned int counter = 0;
+#endif
+#ifdef SELECT_NFT
+	unsigned int counter4 = 0, counter6 = 0;
+#endif
 
 	// Check for existing
 	for (int pos = 0; pos < iplist->size; pos++)
@@ -135,22 +140,20 @@ int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName)
 		if (strchr(readBuf, '.') != NULL) {
 			sprintf(commandBuf, " %s,", readBuf);
 			string_append(&nftcommand4, commandBuf);
-			counter++;
+			counter4++;
 		}
 		if (strchr(readBuf, ':') != NULL) {
 			sprintf(commandBuf, " %s,", readBuf);
 			string_append(&nftcommand6, commandBuf);
-			counter++;
+			counter6++;
 		}
 #endif
 	}
 #ifdef SELECT_NFT
-	if (counter > 0) {
-		sprintf(commandBuf, " }");
-		string_append(&nftcommand4, commandBuf); string_append(&nftcommand6, commandBuf);
-		nft_run_cmd_from_buffer(iplist->opIf, nftcommand4.str);
-		nft_run_cmd_from_buffer(iplist->opIf, nftcommand6.str);
-	}
+	sprintf(commandBuf, " }");
+	string_append(&nftcommand4, commandBuf); string_append(&nftcommand6, commandBuf);
+	if (counter4 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftcommand4.str);
+	if (counter6 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftcommand6.str);
 	string_delete(&nftcommand4); string_delete(&nftcommand6);
 #endif
 
