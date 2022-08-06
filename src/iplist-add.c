@@ -68,7 +68,7 @@ void iplist_finish(struct iplist *iplist) {
 }
 
 int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName) {
-	char commandBuf[256], readBuf[64], flag = 0;
+	char cmdBuf[256], readBuf[64], flag = 0;
 	struct iplist_internal *objptr = NULL;
 	unsigned int counter = 0;
 #ifdef SELECT_NFT
@@ -88,75 +88,75 @@ int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName)
 		objptr = iplist->objptr + iplist->size - 1;
 		strcpy(objptr->name, iplistName);
 #ifdef SELECT_IPSET
-		sprintf(commandBuf,"create %s-4 hash:net family inet", objptr->name);
-		ipset_parse_line(iplist->opIf, commandBuf);
-		sprintf(commandBuf,"create %s-6 hash:net family inet6", objptr->name);
-		ipset_parse_line(iplist->opIf, commandBuf);
+		sprintf(cmdBuf,"create %s-4 hash:net family inet", objptr->name);
+		ipset_parse_line(iplist->opIf, cmdBuf);
+		sprintf(cmdBuf,"create %s-6 hash:net family inet6", objptr->name);
+		ipset_parse_line(iplist->opIf, cmdBuf);
 #endif
 #ifdef SELECT_NFT
-		sprintf(commandBuf, "add set ip %s %s { type ipv4_addr; flags interval; }", iplist->nftTableName, objptr->name);
-		nft_run_cmd_from_buffer(iplist->opIf, commandBuf);
-		sprintf(commandBuf, "add set ip6 %s %s { type ipv6_addr; flags interval; }", iplist->nftTableName, objptr->name);
-		nft_run_cmd_from_buffer(iplist->opIf, commandBuf);
+		sprintf(cmdBuf, "add set ip %s %s { type ipv4_addr; flags interval; }", iplist->nftTableName, objptr->name);
+		nft_run_cmd_from_buffer(iplist->opIf, cmdBuf);
+		sprintf(cmdBuf, "add set ip6 %s %s { type ipv6_addr; flags interval; }", iplist->nftTableName, objptr->name);
+		nft_run_cmd_from_buffer(iplist->opIf, cmdBuf);
 #endif
 	}
 
 	// Every list should flush once
 	if (objptr->flags != (V4_CLEARED | V6_CLEARED)) {
 #ifdef SELECT_IPSET
-		sprintf(commandBuf, "flush %s-4", iplistName);
-		ipset_parse_line(iplist->opIf, commandBuf);
-		sprintf(commandBuf, "flush %s-6", iplistName);
-		ipset_parse_line(iplist->opIf, commandBuf);
+		sprintf(cmdBuf, "flush %s-4", iplistName);
+		ipset_parse_line(iplist->opIf, cmdBuf);
+		sprintf(cmdBuf, "flush %s-6", iplistName);
+		ipset_parse_line(iplist->opIf, cmdBuf);
 #endif
 #ifdef SELECT_NFT
-		sprintf(commandBuf, "flush set ip %s %s", iplist->nftTableName, objptr->name);
-		nft_run_cmd_from_buffer(iplist->opIf, commandBuf);
-		sprintf(commandBuf, "flush set ip6 %s %s", iplist->nftTableName, objptr->name);
-		nft_run_cmd_from_buffer(iplist->opIf, commandBuf);
+		sprintf(cmdBuf, "flush set ip %s %s", iplist->nftTableName, objptr->name);
+		nft_run_cmd_from_buffer(iplist->opIf, cmdBuf);
+		sprintf(cmdBuf, "flush set ip6 %s %s", iplist->nftTableName, objptr->name);
+		nft_run_cmd_from_buffer(iplist->opIf, cmdBuf);
 #endif
 		objptr->flags = V4_CLEARED | V6_CLEARED;
 	}
 
 	// Command compose and execution
 #ifdef SELECT_NFT
-	struct string nftcommand4 = string_init(), nftcommand6 = string_init();
-	sprintf(commandBuf, "add element ip %s %s { ", iplist->nftTableName, iplistName);
-	string_append(&nftcommand4, commandBuf);
-	sprintf(commandBuf, "add element ip6 %s %s { ", iplist->nftTableName, iplistName);
-	string_append(&nftcommand6, commandBuf);
+	struct string nftCmd4 = string_init(), nftCmd6 = string_init();
+	sprintf(cmdBuf, "add element ip %s %s { ", iplist->nftTableName, iplistName);
+	string_append(&nftCmd4, cmdBuf);
+	sprintf(cmdBuf, "add element ip6 %s %s { ", iplist->nftTableName, iplistName);
+	string_append(&nftCmd6, cmdBuf);
 #endif
 	while (fgets(readBuf, 64, iplistDb) != NULL) {
 #ifdef SELECT_IPSET
 		if (strchr(readBuf, '.') != NULL)
-			sprintf(commandBuf, "add %s-4 %s", iplistName, readBuf);
+			sprintf(cmdBuf, "add %s-4 %s", iplistName, readBuf);
 		if (strchr(readBuf, ':') != NULL)
-			sprintf(commandBuf, "add %s-6 %s", iplistName, readBuf);
-		ipset_parse_line(iplist->opIf, commandBuf); counter++;
+			sprintf(cmdBuf, "add %s-6 %s", iplistName, readBuf);
+		ipset_parse_line(iplist->opIf, cmdBuf); counter++;
 #endif
 #ifdef SELECT_NFT
 		if (strchr(readBuf, '.') != NULL) {
-			sprintf(commandBuf, " %s,", readBuf);
-			string_append(&nftcommand4, commandBuf);
+			sprintf(cmdBuf, " %s,", readBuf);
+			string_append(&nftCmd4, cmdBuf);
 			counter4++;
 		}
 		if (strchr(readBuf, ':') != NULL) {
-			sprintf(commandBuf, " %s,", readBuf);
-			string_append(&nftcommand6, commandBuf);
+			sprintf(cmdBuf, " %s,", readBuf);
+			string_append(&nftCmd6, cmdBuf);
 			counter6++;
 		}
 #endif
 	}
 #ifdef SELECT_NFT
-	sprintf(commandBuf, " }");
-	string_append(&nftcommand4, commandBuf); string_append(&nftcommand6, commandBuf);
-	if (counter4 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftcommand4.str);
-	if (counter6 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftcommand6.str);
-	string_delete(&nftcommand4); string_delete(&nftcommand6);
+	sprintf(cmdBuf, " }");
+	string_append(&nftCmd4, cmdBuf); string_append(&nftCmd6, cmdBuf);
+	if (counter4 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftCmd4.str);
+	if (counter6 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftCmd6.str);
+	string_delete(&nftCmd4); string_delete(&nftCmd6);
+	counter = counter4 + counter6;
 #endif
 
 	fclose(iplistDb);
-	counter = counter4 + counter6;
 	printf(" done with %u record(s).\n", counter);
 	return 0;
 }
