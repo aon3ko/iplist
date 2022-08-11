@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <libneko/parameter.h>
 
 #define SELECT_NFT
 #ifdef SELECT_IPSET
@@ -164,8 +165,8 @@ int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName)
 int main(int argc, char *argv[]) {
 	struct iplist *iplist = iplist_init();
 
-	for (int pos = 1; pos < argc; pos++)
-        	if (argv[pos][0] == '-') switch (argv[pos][1]) {
+	PARAMPARSE(argc, argv)
+        	switch (argv[pos][1]) {
 		case 'c':
 			break;
 #ifdef SELECT_NFT
