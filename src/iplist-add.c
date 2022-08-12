@@ -121,11 +121,11 @@ int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName)
 
 	// Command compose and execution
 #ifdef SELECT_NFT
-	struct string nftCmd4 = string_init(), nftCmd6 = string_init();
+	struct string *nftCmd4 = string_init(), *nftCmd6 = string_init();
 	sprintf(cmdBuf, "add element ip %s %s { ", iplist->nftTableName, iplistName);
-	string_append(&nftCmd4, cmdBuf);
+	string_append(nftCmd4, cmdBuf);
 	sprintf(cmdBuf, "add element ip6 %s %s { ", iplist->nftTableName, iplistName);
-	string_append(&nftCmd6, cmdBuf);
+	string_append(nftCmd6, cmdBuf);
 #endif
 	while (fgets(readBuf, 64, iplistDb) != NULL) {
 #ifdef SELECT_IPSET
@@ -138,22 +138,22 @@ int iplist_append(struct iplist *iplist, FILE *iplistDb, const char *iplistName)
 #ifdef SELECT_NFT
 		if (strchr(readBuf, '.') != NULL) {
 			sprintf(cmdBuf, " %s,", readBuf);
-			string_append(&nftCmd4, cmdBuf);
+			string_append(nftCmd4, cmdBuf);
 			counter4++;
 		}
 		if (strchr(readBuf, ':') != NULL) {
 			sprintf(cmdBuf, " %s,", readBuf);
-			string_append(&nftCmd6, cmdBuf);
+			string_append(nftCmd6, cmdBuf);
 			counter6++;
 		}
 #endif
 	}
 #ifdef SELECT_NFT
 	sprintf(cmdBuf, " }");
-	string_append(&nftCmd4, cmdBuf); string_append(&nftCmd6, cmdBuf);
-	if (counter4 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftCmd4.str);
-	if (counter6 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftCmd6.str);
-	string_delete(&nftCmd4); string_delete(&nftCmd6);
+	string_append(nftCmd4, cmdBuf); string_append(nftCmd6, cmdBuf);
+	if (counter4 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftCmd4->str);
+	if (counter6 > 0) nft_run_cmd_from_buffer(iplist->opIf, nftCmd6->str);
+	string_delete(nftCmd4); string_delete(nftCmd6);
 	counter = counter4 + counter6;
 #endif
 
