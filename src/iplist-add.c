@@ -1,22 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <libneko/parameter.h>
+#include <parameter.h>
 
-#define SELECT_NFT
 #ifdef SELECT_IPSET
 	#include <libipset/ipset.h>
-	#define SELECTED
 #endif
 #ifdef SELECT_NFT
 	#include <nftables/libnftables.h>
-	#include <libneko/realstring.c>
-	#define SELECTED
-#endif
-#ifndef SELECTED
-	#include <libipset/ipset.h>
-	#include <nftables/libnftables.h>
-	#include <libneko/realstring.c>
+	#include <realstring.h>
 #endif
 
 char workpath[128] = "/etc/iplist";
@@ -174,9 +166,6 @@ int main(int argc, char *argv[]) {
 			strcpy(iplist->nftTableName, argv[pos + 1]);
 			break;
 #endif
-#ifndef SELECTED
-		case '-':
-#endif
 		default:
 			printf("\
 usage:	 iplist-add [options]\n\
@@ -190,15 +179,6 @@ options: -c <config file location>\n\
 	 -t <table name>\n\
 	    add to which table.\n\
 Compiled with nft support\n");
-#endif
-#ifndef SELECTED
-			printf("\
-	 --ipset\n\
-	    use ipset.\n\
-	 --nft\n\
-	    use nft.\n\
-	 -t <table name>\n\
-	    add to which table.\n");
 #endif
 			return EXIT_SUCCESS;
 		}
